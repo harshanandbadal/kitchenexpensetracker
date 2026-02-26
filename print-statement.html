@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Kitchen Expense Tracker - Statement</title>
+    <link rel="stylesheet" href="print-statement.css">
+</head>
+<body>
+    <div class="print-container">
+        <div class="header">
+            <h1>🍳 Kitchen Expense Tracker</h1>
+            <p>Monthly Expense Statement</p>
+        </div>
+
+        <div class="statement-date" id="statementDate"></div>
+
+        <div class="date-range hidden" id="dateRange">
+            <div class="date-range-label">Statement Period:</div>
+            <div class="date-range-value" id="dateRangeValue"></div>
+        </div>
+
+        <div id="errorMessage" class="error"></div>
+
+        <div id="statementContent" class="loading">
+            Loading statement...
+        </div>
+
+        <div class="footer">
+            <p>This is an automatically generated statement from Kitchen Expense Tracker © 2026</p>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-print" onclick="window.print()">🖨️ Print Statement</button>
+            <button class="btn btn-back" onclick="window.history.back()">← Back to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function authHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            };
+        }
+
+        async function apiRequest(url, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${url}`, {
+                    ...options,
+                    headers: authHeaders()
+                });
+
+                if (response.status === 401) {
+                    window.location.href = 'login.html';
+                    return null;
+                }
+
+                return response;
+            } catch (err) {
+                console.error('API request failed:', err);
+                return null;
+            }
+        }
+
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-IN', options);
+        }
+
+        function formatCurrency(amount) {
+            return '₹' + parseFloat(amount).toFixed(2);
+        }
+
+        async function loadStatement() {
+            const contentDiv = document.getElementById('statementContent');
+            const errorDiv = document.getElementById('errorMessage');
+
+            try {
+                // Set current date and time
+                const now = new Date();
+                const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                document.getElementById('statementDate').textContent = 'Generated on: ' + now.toLocaleDateString('en-IN', options);
+
+                // Fetch expenses
+                const res = await apiRequest('/api/expenses');
+
+                if (!res || !res.ok) {
+                    throw new Error('Failed to fetch expenses. Status: ' + (res ? res.status : 'unknown'));
+                }
+
+                const expenses = await res.json();
+
+                // Fetch user info to get total budget
+                const userRes = await apiRequest('/api/auth/me');
+                const userData = userRes && userRes.ok ? await userRes.json() : {};
+                const user = userData.user || {};
+                const totalBudget = user.totalBudget || 0;
+
+                // Calculate total spent
+                const totalSpent = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+                const balanceLeft = totalBudget - totalSpent;
+
+                // Calculate date range
+                const dateRangeDiv = document.getElementById('dateRange');
+                if (expenses.length > 0) {
+                    const dates = expenses.map(exp => new Date(exp.date)).sort((a, b) => a - b);
+                    const firstDate = dates[0];
+                    const lastDate = dates[dates.length - 1];
+                    const firstDateStr = firstDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+                    const lastDateStr = lastDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+                    document.getElementById('dateRangeValue').textContent = `${firstDateStr} to ${lastDateStr}`;
+                    dateRangeDiv.style.display = 'block';
+                } else {
+                    dateRangeDiv.style.display = 'none';
+                }
+
+                // Build statement HTML
+                let html = `
+                    <div class="statement-info">
+                        <div class="info-box">
+                            <div class="info-label">Total Budget</div>
+                            <div class="info-value budget">${formatCurrency(totalBudget)}</div>
+                        </div>
+                        <div class="info-box">
+                            <div class="info-label">Total Spent</div>
+                            <div class="info-value spent">${formatCurrency(totalSpent)}</div>
+                        </div>
+                        <div class="info-box">
+                            <div class="info-label">Balance Available</div>
+                            <div class="info-value balance">${formatCurrency(balanceLeft)}</div>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Item Purchased</th>
+                                <th>Quantity</th>
+                                <th>Amount (₹)</th>
+                                <th>Mode of Transaction</th>
+                                <th>Balance Available (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                if (expenses.length === 0) {
+                    html += '<tr class="empty-rows"><td colspan="6">No expenses recorded yet</td></tr>';
+                } else {
+                    // Sort expenses by date
+                    expenses.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    
+                    let runningBalance = totalBudget;
+                    expenses.forEach((exp, index) => {
+                        runningBalance -= parseFloat(exp.amount);
+                        const dateStr = exp.date ? formatDate(exp.date) : 'N/A';
+                        html += `
+                            <tr>
+                                <td>${dateStr}</td>
+                                <td>${exp.item}</td>
+                                <td>${exp.quantity}</td>
+                                <td>${formatCurrency(exp.amount)}</td>
+                                <td>${exp.mode}</td>
+                                <td>${formatCurrency(runningBalance)}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+
+                contentDiv.innerHTML = html;
+                errorDiv.style.display = 'none';
+
+            } catch (err) {
+                console.error('Error loading statement:', err);
+                contentDiv.innerHTML = '';
+                errorDiv.textContent = 'Error loading statement: ' + err.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Load statement when page loads
+        document.addEventListener('DOMContentLoaded', loadStatement);
+    </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Expense Tracker - Login</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍳 Kitchen Expense Tracker</h1>
+            <p>Track your kitchen spending and manage your budget</p>
+        </div>
+
+        <div class="content login-content-flex">
+            <form class="form-section auth-form login-form-width" id="loginForm">
+                <h2 class="login-title">🍳 User Login</h2>
+                
+                <div id="loginError" class="auth-error login-error-hide"></div>
+                <div id="loginSuccess" class="auth-success login-success-hide"></div>
+                
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required placeholder="Enter your username" minlength="3">
+                </div>
+
+                <br>
+            
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter your password" minlength="6">
+                </div>
+
+                <br>
+                    
+                <div class="button-group">
+                    <button type="submit" class="submit-btn" id="loginBtn">Login</button>
+                </div>
+
+                <p class="login-signup-link">
+                    Don't have an account? <a href="signup.html" class="signup-link">Sign Up</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <br>
+    <br>
+    
+    <footer class="site-footer">
+        <p>Copyright © 2026 Harsh Anand</p>
+    </footer>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // If already logged in, redirect to index
+        if (localStorage.getItem('token')) {
+            window.location.href = 'index.html';
+        }
+
+        // Show message from signup redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('registered') === 'true') {
+            const successEl = document.getElementById('loginSuccess');
+            successEl.textContent = 'Account created successfully! Please log in.';
+            successEl.style.display = 'block';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const errorEl = document.getElementById('loginError');
+            const successEl = document.getElementById('loginSuccess');
+            const loginBtn = document.getElementById('loginBtn');
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                errorEl.textContent = 'Please fill in all fields.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            loginBtn.textContent = 'Logging in...';
+            loginBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    successEl.textContent = 'Login successful! Redirecting...';
+                    successEl.style.display = 'block';
+                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
+                } else {
+                    errorEl.textContent = data.error || 'Login failed. Please try again.';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Cannot connect to server. Make sure the backend is running.';
+                errorEl.style.display = 'block';
+            } finally {
+                loginBtn.textContent = 'Login';
+                loginBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

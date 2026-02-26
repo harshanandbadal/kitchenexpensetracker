@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Expense Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍳 Kitchen Expense Tracker</h1>
+            <p>Track your kitchen spending and manage your budget</p>
+            <div id="userInfo" class="user-info">
+                <span id="welcomeUser"></span>
+                <button id="logoutBtn" class="logout-btn custom-logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div class="balance-section">
+            <div class="balance-item">
+                <div class="balance-label">Total Budget</div>
+                <div class="balance-value" id="totalBudget">₹0.00</div>
+            </div>
+            <div class="balance-item">
+                <div class="balance-label">Total Spent</div>
+                <div class="balance-value" id="totalSpent">₹0.00</div>
+            </div>
+            <div class="balance-item">
+                <div class="balance-label">Balance Available</div>
+                <div class="balance-value" id="balanceLeft">₹0.00</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="form-section">
+                <h2>Enter Purchase Details</h2>
+
+                <form id="expenseForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="date">Date (DD-MM-YYYY)</label>
+                            <input type="date" id="date" required placeholder="DD-MM-YYYY">
+                        </div>
+                        <div class="form-group">
+                            <label for="item">Item Purchased</label>
+                            <input type="text" id="item" required placeholder="e.g., Rice, Vegetables">
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Amount (₹)</label>
+                            <input type="number" id="amount" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Quantity</label>
+                            <input type="text" id="quantity" required placeholder="e.g., 5kg, 2 packets">
+                        </div>
+                        <div class="form-group">
+                            <label for="mode">Mode of Transaction</label>
+                            <select id="mode" required placeholder="Select Modes">
+                                <option value="" disabled selected>Select Mode</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Debit Card">Debit Card</option>
+                                <option value="Other Methods">Other Methods</option>
+                            </select>
+                        </div>
+                        <div class="button-group">
+                            <button type="submit" class="submit-btn">Submit</button>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+
+            <div class="table-section">
+                <h2 class="expense-records-title">Expense Records</h2>
+                <table id="expenseTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Item Purchased</th>
+                            <th>Amount (₹)</th>
+                            <th>Quantity</th>
+                            <th>Mode of Transaction</th>
+                            <th>Balance Available (₹)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseTableBody">
+                        <tr class="empty-state">
+                            <td colspan="7">
+                                <p>No expenses recorded yet</p>
+                                <small>Add your first expense using the form above</small>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <br>
+    <br>
+    
+        <footer class="site-footer">
+            <p>Copyright © 2026 Harsh Anand</p>
+        </footer>
+    
+    <br>
+    <br>
+
+    <div>
+        <nav class="bottom-navbar">
+            <ul class="nav-list">
+                <li><a href="#" id="set-budget">Set Monthly Budget</a></li>
+                <li><a href="#" id="add-money">Add Money to Budget</a></li>
+                <li><a href="#" id="clear-data">Clear All Data</a></li>
+                <li><a href="#" id="print-statement">Print Statement</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
