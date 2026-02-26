@@ -1,6 +1,6 @@
 // script.js
 
-const API_BASE = window.location.origin;
+const API_BASE = 'https://backend-six-henna-16.vercel.app';
 
 // ===================== Auth Helpers =====================
 function getToken() {
