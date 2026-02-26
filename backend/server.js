@@ -9,7 +9,11 @@ const path = require('path');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Serve static files from the parent directory (frontend)
@@ -137,6 +141,11 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password.' });
     }
 
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined');
+      return res.status(500).json({ error: 'Server configuration error.' });
+    }
+
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
@@ -145,6 +154,7 @@ app.post('/api/auth/login', async (req, res) => {
       user: { id: user._id, username: user.username, email: user.email, totalBudget: user.totalBudget }
     });
   } catch (err) {
+    console.error('Login error:', err.message);
     res.status(500).json({ error: 'Server error. Please try again.' });
   }
 });
